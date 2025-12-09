@@ -1,3 +1,4 @@
+# %% Imports
 """
 Core EV Stag Hunt model components.
 
@@ -36,6 +37,7 @@ from typing import Iterable, List, Dict
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 
 ####################################
+# %% 
 # Strategy selection helpers
 #
 # We provide two different ways agents can choose their strategy:
@@ -78,6 +80,7 @@ def choose_strategy_logit(agent, neighbors, a_I, b, tau):
     return "C" if random.random() < P_C else "D"
 
 
+# %%
 
 ####################################
 # Agent class
@@ -140,6 +143,9 @@ class EVAgent(Agent):
                 payoff += b
         self.payoff = payoff
 
+# %%
+
+
     ####################################
     # Advance method
     #
@@ -169,6 +175,7 @@ class EVAgent(Agent):
             raise ValueError(f"Unknown strategy choice function: {func}")
 
         self.strategy = self.next_strategy
+# %%
 
     ####################################
     # Model class
@@ -285,6 +292,7 @@ class EVStagHuntModel(Model):
         if self.datacollector is not None:
             self.datacollector.collect(self) # collect data at the end of each step
         self.step_count += 1 # increment step count after data collection
+# %%
 
 #########################
 #
@@ -327,6 +335,7 @@ def set_initial_adopters(model, X0_frac, method="random", seed=None, high=True):
 
     raise ValueError(f"Unknown method: {method}")
 
+# %%
 
 # -----------------------------
 # Ratio sweep helpers (computation-only)
@@ -416,6 +425,8 @@ def run_network_trial(
 
     return model.get_adoption_fraction()
 
+# %%
+
 #########################
 #
 # Compute final mean adoption fraction vs ratio
@@ -471,6 +482,7 @@ def final_mean_adoption_vs_ratio(
             finals.append(x_star)
         means.append(float(np.mean(finals)))
     return np.asarray(means, dtype=float)
+# %%
 
 #########################
 #
@@ -525,7 +537,7 @@ def _row_for_ratio_task(args: Dict) -> np.ndarray:
         row[j] = float(np.mean(finals))
     return row
 
-    
+# %%
 #########################
 #
 # Compute heatmap matrix for phase sweep
@@ -600,3 +612,4 @@ def phase_sweep_X0_vs_ratio(
             X_final[i, :] = row
 
     return X_final
+# %%

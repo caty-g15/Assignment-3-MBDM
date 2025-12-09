@@ -1,3 +1,5 @@
+# %%
+
 """
 Experiment utilities for the EV Stag Hunt model.
 
@@ -29,6 +31,7 @@ from ev_plotting import (
     plot_phase_plot,
 )
 
+# %%
 
 # -----------------------------
 # Policy factories
@@ -72,6 +75,7 @@ def policy_infrastructure_boost_factory(start: int, boost: float = 0.2, once: bo
 
     return policy
 
+# %%
 
 # -----------------------------
 # Trial runner
@@ -173,6 +177,7 @@ def _timeseries_trial_worker(args_dict: Dict) -> Tuple[np.ndarray, np.ndarray]:
     )
     return X, I
 
+# %%
 
 # -----------------------------
 # Experiment: Intervention trials + plotting
@@ -256,6 +261,7 @@ def collect_intervention_trials(
     subsidy_df = summarize(subsidy_X)
 
     return baseline_X, baseline_I, subsidy_X, subsidy_I, baseline_df, subsidy_df
+# %%
 
 
 def traces_to_long_df(baseline_X: List[np.ndarray], subsidy_X: List[np.ndarray]) -> pd.DataFrame:
@@ -269,6 +275,7 @@ def traces_to_long_df(baseline_X: List[np.ndarray], subsidy_X: List[np.ndarray])
             rows.append(("subsidy", trial, t, float(x)))
     return pd.DataFrame(rows, columns=["group", "trial", "time", "X"])
 
+# %%
 
 def ratio_sweep_df(
     X0_frac: float = 0.40,
@@ -317,6 +324,7 @@ def ratio_sweep_df(
 
     return pd.DataFrame({"ratio": ratio_values, "X_mean": X_means})
 
+# %%
 
 def phase_sweep_df(
     max_workers: int | None = None,
@@ -375,6 +383,7 @@ def phase_sweep_df(
             rows.append((float(X0), float(ratio), float(X_final[j, i])))
     return pd.DataFrame(rows, columns=["X0", "ratio", "X_final"])
 
+# %%
 
 def plot_intervention_fanchart(
     baseline_X: List[np.ndarray],
@@ -448,6 +457,7 @@ def plot_intervention_fanchart(
     plt.close(fig)
     return out_path
 
+# %%
 
 def plot_spaghetti_traces(
     baseline_X: List[np.ndarray],
@@ -499,6 +509,7 @@ def plot_spaghetti_traces(
     plt.close(fig)
     return out_path
 
+# %%
 
 def plot_time_evolving_density(
     baseline_X: List[np.ndarray],
@@ -549,6 +560,7 @@ def plot_time_evolving_density(
     plt.close(fig)
     return out_path
 
+# %%
 
 def run_ratio_sweep_plot(
     X0_frac: float = 0.40,
@@ -614,6 +626,7 @@ def run_ratio_sweep_plot(
     plt.close(fig)
     return out_path
 
+# %%
 
 def run_phase_plot_X0_vs_ratio_network(
     max_workers: int | None = None,
@@ -734,6 +747,7 @@ def run_intervention_example(
     img_path = plot_fanchart(traces_df)
     return baseline_df, subsidy_df, img_path
 
+# %%
 
 # -----------------------------
 # CLI Entrypoint

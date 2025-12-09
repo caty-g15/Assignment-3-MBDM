@@ -1,10 +1,11 @@
+# %%
 """
 Plotting utilities for EV Stag Hunt experiments.
 
 All functions accept pandas DataFrames produced by ev_experiments
 and save figures to disk, returning the output path.
 """
-
+# %%
 from __future__ import annotations
 
 import os
@@ -14,13 +15,13 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-
+# %%
 def _default_plot_path(filename: str) -> str:
     plots_dir = os.path.join(os.getcwd(), "plots")
     os.makedirs(plots_dir, exist_ok=True)
     return os.path.join(plots_dir, filename)
 
-
+# %%
 def plot_fanchart(traces_df: pd.DataFrame, out_path: Optional[str] = None) -> str:
     """Plot fan charts (quantile bands) for baseline vs subsidy using traces DF.
 
@@ -73,6 +74,7 @@ def plot_fanchart(traces_df: pd.DataFrame, out_path: Optional[str] = None) -> st
     plt.close(fig)
     return out_path
 
+# %%
 
 def plot_spaghetti(traces_df: pd.DataFrame, *, max_traces: int = 100, alpha: float = 0.15, out_path: Optional[str] = None) -> str:
     """Spaghetti plot from traces DF for baseline vs subsidy."""
@@ -99,7 +101,7 @@ def plot_spaghetti(traces_df: pd.DataFrame, *, max_traces: int = 100, alpha: flo
     plt.close(fig)
     return out_path
 
-
+# %%
 def plot_density(traces_df: pd.DataFrame, *, x_bins: int = 50, time_bins: Optional[int] = None, out_path: Optional[str] = None) -> str:
     """Time-evolving density plot (2D histogram) from traces DF."""
     groups = ["baseline", "subsidy"]
@@ -124,7 +126,7 @@ def plot_density(traces_df: pd.DataFrame, *, x_bins: int = 50, time_bins: Option
     plt.close(fig)
     return out_path
 
-
+# %%
 def plot_ratio_sweep(sweep_df: pd.DataFrame, out_path: Optional[str] = None) -> str:
     """Plot X* vs ratio from a DataFrame with columns ['ratio','X_mean']."""
     fig, ax = plt.subplots(figsize=(7, 4))
@@ -140,7 +142,7 @@ def plot_ratio_sweep(sweep_df: pd.DataFrame, out_path: Optional[str] = None) -> 
     plt.close(fig)
     return out_path
 
-
+# %%
 def plot_phase_plot(phase_df: pd.DataFrame, out_path: Optional[str] = None) -> str:
     """Plot heatmap from tidy DataFrame with columns ['X0','ratio','X_final']."""
     # Pivot to matrix for imshow
@@ -163,6 +165,7 @@ def plot_phase_plot(phase_df: pd.DataFrame, out_path: Optional[str] = None) -> s
     plt.ylabel("a_I / b (initial payoff ratio)")
     plt.title("Network phase plot: X* over X0 and a_I/b")
 
+# %%
     # Overlay threshold X = 1/ratio
     X_thresh = 1.0 / ratios
     X_thresh_clipped = np.clip(X_thresh, 0.0, 1.0)
