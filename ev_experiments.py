@@ -103,7 +103,9 @@ def run_timeseries_trial(
         "I0": 0.05,
         "network_type": "random",
         "n_nodes": 100,
-        "p": 0.05,
+        "p_ER": 0.05,
+        "p_WA": 0.2,
+        "k": 4,
         "m": 2,
         "collect": True,
         "X0_frac": 0.0,
@@ -126,7 +128,9 @@ def run_timeseries_trial(
         seed=seed,
         network_type=scenario["network_type"],
         n_nodes=scenario["n_nodes"],
-        p=scenario["p"],
+        p_ER=scenario["p_ER"],
+        p_WA=scenario["p_WA"],
+        k=scenario["k"],
         m=scenario["m"],
         collect=True,
         strategy_choice_func=strategy_choice_func,
@@ -294,8 +298,10 @@ def ratio_sweep_df(
         "g_I": 0.05,
         "I0": 0.05,
         "network_type": "BA",
-        "n_nodes": 120,
-        "p": 0.05,
+        "n_nodes": 200,
+        "p_ER": 0.05,
+        "p_WA": 0.1,
+        "k": 4,
         "m": 2,
     }
     if scenario_kwargs:
@@ -314,7 +320,9 @@ def ratio_sweep_df(
         T=T,
         network_type=scenario["network_type"],
         n_nodes=scenario["n_nodes"],
-        p=scenario["p"],
+        p_ER=scenario["p_ER"],
+        p_WA=scenario["p_WA"],
+        k=scenario["k"],
         m=scenario["m"],
         batch_size=batch_size,
         init_noise_I=init_noise_I,
@@ -345,13 +353,15 @@ def phase_sweep_df(
         ratio_values = np.linspace(0.8, 3.5, 41)
 
     scenario = {
-        "I0": 0.05,
-        "beta_I": 2.0,
+       "beta_I": 2.0,
         "b": 1.0,
         "g_I": 0.05,
+        "I0": 0.05,
         "network_type": "BA",
-        "n_nodes": 120,
-        "p": 0.05,
+        "n_nodes": 200,
+        "p_ER": 0.05,
+        "p_WA": 0.1,
+        "k": 4,
         "m": 2,
     }
     if scenario_kwargs:
@@ -367,7 +377,9 @@ def phase_sweep_df(
         T=T,
         network_type=scenario["network_type"],
         n_nodes=scenario["n_nodes"],
-        p=scenario["p"],
+        p_ER=scenario["p_ER"],
+        p_WA=scenario["p_WA"],
+        k=scenario["k"],
         m=scenario["m"],
         batch_size=batch_size,
         init_noise_I=init_noise_I,
@@ -584,8 +596,10 @@ def run_ratio_sweep_plot(
         "g_I": 0.05,
         "I0": 0.05,
         "network_type": "BA",
-        "n_nodes": 120,
-        "p": 0.05,
+        "n_nodes": 200,
+        "p_ER": 0.05,
+        "p_WA": 0.1,
+        "k": 4,
         "m": 2,
     }
     if scenario_kwargs:
@@ -595,19 +609,21 @@ def run_ratio_sweep_plot(
         ratio_values = np.linspace(0.8, 3.5, 41)
 
     X_means = final_mean_adoption_vs_ratio(
-        X0_frac,
-        ratio_values,
-        I0=scenario["I0"],
+        ratio,
+        I0_values,
+        X0_frac=scenario["X0_frac"],
         beta_I=scenario["beta_I"],
         b=scenario["b"],
         g_I=scenario["g_I"],
         T=T,
         network_type=scenario["network_type"],
         n_nodes=scenario["n_nodes"],
-        p=scenario["p"],
+        p_ER=scenario["p_ER"],
+        p_WA=scenario["p_WA"],
+        k=scenario["k"],
         m=scenario["m"],
         batch_size=batch_size,
-        init_noise_I=init_noise_I,
+        init_noise_X0=init_noise_X0,
         strategy_choice_func=strategy_choice_func,
         tau=tau,
     )
@@ -652,20 +668,22 @@ def run_phase_plot_X0_vs_ratio_network(
         ratio_values = np.linspace(0.8, 3.5, 41)
 
     scenario = {
-        "I0": 0.05,
         "beta_I": 2.0,
         "b": 1.0,
         "g_I": 0.05,
+        "I0": 0.05,
         "network_type": "BA",
         "n_nodes": 120,
-        "p": 0.05,
+        "p_ER": 0.05,
+        "p_WA": 0.1,
+        "k": 4,
         "m": 2,
     }
     if scenario_kwargs:
         scenario.update(scenario_kwargs)
 
     X_final = phase_sweep_X0_vs_ratio(
-        X0_values,
+        X0_frac,
         ratio_values,
         I0=scenario["I0"],
         beta_I=scenario["beta_I"],
@@ -674,14 +692,14 @@ def run_phase_plot_X0_vs_ratio_network(
         T=T,
         network_type=scenario["network_type"],
         n_nodes=scenario["n_nodes"],
-        p=scenario["p"],
+        p_ER=scenario["p_ER"],
+        p_WA=scenario["p_WA"],
+        k=scenario["k"],
         m=scenario["m"],
         batch_size=batch_size,
         init_noise_I=init_noise_I,
         strategy_choice_func=strategy_choice_func,
         tau=tau,
-        max_workers=max_workers or 1,
-        backend=backend,
     )
 
     plt.figure(figsize=(7, 4))
@@ -771,12 +789,14 @@ def main():
         I0=0.05,
         network_type="BA",
         n_nodes=300,
+        p_WA=0.1,
+        k=4,
         m=2,
         collect=True,
         X0_frac=0.40,
         init_method="random",
         # ER-specific `p` ignored for BA but kept for completeness
-        p=0.05,
+        p_ER=0.05,
     )
     subsidy = dict(start=10, end=60, delta_a0=0.4, delta_beta_I=0.0)
 

@@ -143,7 +143,7 @@ class EVAgent(Agent):
                 payoff += b
         self.payoff = payoff
 
-# %%
+
 
 
     ####################################
@@ -213,7 +213,9 @@ class EVStagHuntModel(Model):
         seed=None,
         network_type="random",
         n_nodes=100,
-        p=0.05,
+        p_ER=0.05,
+        p_WA=0.1,
+        k=4,
         m=2,
         collect=True,
         strategy_choice_func: str = "imitate",
@@ -224,8 +226,10 @@ class EVStagHuntModel(Model):
         # Build graph
         if network_type == "BA":
             G = nx.barabasi_albert_graph(n_nodes, m, seed=seed)
-        else:
-            G = nx.erdos_renyi_graph(n_nodes, p, seed=seed)
+        elif network_type == "WA":
+            G = nx.watts_strogatz_graph(n_nodes,k,p_WA,seed=seed)
+        elif network_type == "random":
+            G = nx.erdos_renyi_graph(n_nodes, p_ER, seed=seed)
         self.G = G
         self.grid = NetworkGrid(G)
         self.schedule = SimultaneousActivation(self)
@@ -371,7 +375,9 @@ def run_network_trial(
     T: int = 200,
     network_type: str = "random",
     n_nodes: int = 120,
-    p: float = 0.05,
+    p_ER: float = 0.05,
+    p_WA: float = 0.1,
+    k: float = 4,
     m: int = 2,
     seed: int | None = None,
     tol: float = 1e-3,
@@ -398,7 +404,9 @@ def run_network_trial(
         seed=seed,
         network_type=network_type,
         n_nodes=n_nodes,
-        p=p,
+        p_WA=p_WA,
+        p_ER=p_ER,
+        k=k,
         m=m,
         collect=collect,
         strategy_choice_func=strategy_choice_func,
@@ -443,7 +451,9 @@ def final_mean_adoption_vs_ratio(
     T: int = 200,
     network_type: str = "random",
     n_nodes: int = 120,
-    p: float = 0.05,
+    p_ER: float = 0.05,
+    p_WA: float = 0.1,
+    k: float = 4,
     m: int = 2,
     batch_size: int = 16,
     init_noise_I: float = 0.04,
@@ -472,7 +482,9 @@ def final_mean_adoption_vs_ratio(
                 T=T,
                 network_type=network_type,
                 n_nodes=n_nodes,
-                p=p,
+                p_ER=p_ER,
+                p_WA=p_WA,
+                k = k,
                 m=m,
                 seed=seed_j,
                 collect=False,
@@ -482,38 +494,40 @@ def final_mean_adoption_vs_ratio(
             finals.append(x_star)
         means.append(float(np.mean(finals)))
     return np.asarray(means, dtype=float)
-# %%
 
-#########################
-#
-# Compute heatmap row for a fixed ratio
-# 
-##########################
-def _row_for_ratio_task(args: Dict) -> np.ndarray:
-    """Top-level worker to compute one heatmap row for a fixed ratio.
+def final_mean_adoption_vs_initial_adoption(
+    ratio: float,
+    X0_values: Iterable[float],
+    *,
+    I0: float = 0.05,
+    beta_I: float = 2.0,
+    b: float = 1.0,
+    g_I: float = 0.05,
+    T: int = 200,
+    network_type: str = "random",
+    n_nodes: int = 120,
+    p_ER: float = 0.05,
+    p_WA: float = 0.1,
+    k: float = 4,
+    m: int = 2,
+    batch_size: int = 16,
+    init_noise_I: float = 0.04,
+    strategy_choice_func: str = "imitate",
+    tau: float = 1.0,
+) -> np.ndarray:
+    """Compute mean final adoption across a sweep of ratio values.
 
-    Returns an array of mean final adoption across provided X0_values.
+    For each ratio, average over `batch_size` trials with jittered `I0` and seeds.
+    Returns a numpy array of means aligned with `ratio_values` order.
     """
-    ratio = args["ratio"]
-    X0_values = args["X0_values"]
-    I0 = args["I0"]
-    beta_I = args["beta_I"]
-    b = args["b"]
-    g_I = args["g_I"]
-    T = args["T"]
-    network_type = args["network_type"]
-    n_nodes = args["n_nodes"]
-    p = args["p"]
-    m = args["m"]
-    batch_size = args["batch_size"]
-    init_noise_I = args["init_noise_I"]
-    strategy_choice_func = args["strategy_choice_func"]
-    tau = args["tau"]
-
-    row = np.empty(len(X0_values), dtype=float)
-    for j, X0 in enumerate(X0_values):
+    X0_frac = list(X0_values)
+    means: List[float] = []
+    for X0 in X0_frac:
         finals: List[float] = []
         for _ in range(batch_size):
+
+            # For a batch_size number of simulations, the model randomizes the number of 
+            # initial infrastructure, and uses different (random) seeds
             I0_j = float(np.clip(np.random.normal(loc=I0, scale=init_noise_I), 0.0, 1.0))
             seed_j = np.random.randint(0, 2**31 - 1)
             x_star = run_network_trial(
@@ -526,7 +540,68 @@ def _row_for_ratio_task(args: Dict) -> np.ndarray:
                 T=T,
                 network_type=network_type,
                 n_nodes=n_nodes,
-                p=p,
+                p_ER=p_ER,
+                p_WA=p_WA,
+                k = k,
+                m=m,
+                seed=seed_j,
+                collect=False,
+                strategy_choice_func=strategy_choice_func,
+                tau=tau,
+            )
+            finals.append(x_star)
+        means.append(float(np.mean(finals)))
+    return np.asarray(means, dtype=float)
+
+# %%
+
+#########################
+#
+# Compute heatmap row for a fixed ratio
+# 
+##########################
+def _row_for_ratio_task(args: Dict) -> np.ndarray:
+    ratio = args["ratio"]
+    X0_values = args["X0_values"]
+    I0 = args["I0"]
+    beta_I = args["beta_I"]
+    b = args["b"]
+    g_I = args["g_I"]
+    T = args["T"]
+    network_type = args["network_type"]
+    n_nodes = args["n_nodes"]
+    p_ER = args["p_ER"]
+    p_WA = args["p_WA"]
+    k = args["k"]
+    m = args["m"]
+    batch_size = args["batch_size"]
+    init_noise_I = args["init_noise_I"]
+    strategy_choice_func = args["strategy_choice_func"]
+    tau = args["tau"]
+
+    # Prepare empty row, each will correspond to one initial adoption value X0
+    row = np.empty(len(X0_values), dtype=float)
+
+    # For each X0 value, run multiple simulations
+    for j, X0 in enumerate(X0_values):
+        finals: List[float] = []
+        for _ in range(batch_size):
+            # Jitter a bit the model with different initial infrastructure and different seeds
+            I0_j = float(np.clip(np.random.normal(loc=I0, scale=init_noise_I), 0.0, 1.0))
+            seed_j = np.random.randint(0, 2**31 - 1)
+            x_star = run_network_trial(
+                X0_frac=X0,
+                ratio=ratio,
+                I0=I0_j,
+                beta_I=beta_I,
+                b=b,
+                g_I=g_I,
+                T=T,
+                network_type=network_type,
+                n_nodes=n_nodes,
+                p_ER=p_ER,
+                p_WA=p_WA,
+                k=k,
                 m=m,
                 seed=seed_j,
                 collect=False,
@@ -554,7 +629,9 @@ def phase_sweep_X0_vs_ratio(
     T: int = 250,
     network_type: str = "BA",
     n_nodes: int = 120,
-    p: float = 0.05,
+    p_ER: float = 0.05,
+    p_WA: float = 0.1,
+    k: float = 4,
     m: int = 2,
     batch_size: int = 16,
     init_noise_I: float = 0.04,
@@ -568,11 +645,15 @@ def phase_sweep_X0_vs_ratio(
     Returns an array of shape (len(ratio_values), len(X0_values)) aligned with
     the provided orders. Rows correspond to ratios; columns to X0 values.
     """
+
+    # Creates emppty heatmap of the right size
     X0_values = list(X0_values)
     ratio_values = list(ratio_values)
     X_final = np.zeros((len(ratio_values), len(X0_values)), dtype=float)
 
     # Prepare tasks per ratio
+    # Each task corresponds to computing one row of the heatmap
+    # For each row, fix the ratio, then compute the final adoption for all X0 values
     tasks: List[Dict] = []
     for ratio in ratio_values:
         tasks.append({
@@ -585,7 +666,9 @@ def phase_sweep_X0_vs_ratio(
             "T": T,
             "network_type": network_type,
             "n_nodes": n_nodes,
-            "p": p,
+            "p_ER": p_ER,
+            "p_WA": p_WA,
+            "k": k,
             "m": m,
             "batch_size": batch_size,
             "init_noise_I": init_noise_I,
@@ -599,17 +682,84 @@ def phase_sweep_X0_vs_ratio(
         except Exception:
             max_workers = 1
 
+    # It tries to use parallel processing to speed up the sweep 
     Executor = ProcessPoolExecutor if backend == "process" and max_workers > 1 else ThreadPoolExecutor
     if max_workers > 1:
         with Executor(max_workers=max_workers) as ex:
+
+            # for each ratio (row), we send one task to a worker, which will return the values of the row
             futures = [ex.submit(_row_for_ratio_task, args) for args in tasks]
+
+            # Wait for each worker to finish its job, then receive the row it computed,
+            # and insert that row into the correct position in the X_final matrix.
             for i, fut in enumerate(futures):
                 row = fut.result()
                 X_final[i, :] = row
+
+    # Otherwise, compute one row at the time, and fill in the columns for each row with _row_per_ratio_task
     else:
         for i, args in enumerate(tasks):
             row = _row_for_ratio_task(args)
             X_final[i, :] = row
 
     return X_final
+# %%
+def final_mean_adoption_vs_initial_infrastructure(
+    ratio: float,
+    I0_values: Iterable[float],
+    *,
+    X0_frac: float = 0.45,
+    beta_I: float = 2.0,
+    b: float = 1.0,
+    g_I: float = 0.05,
+    T: int = 200,
+    network_type: str = "random",
+    n_nodes: int = 120,
+    p_ER: float = 0.05,
+    p_WA: float = 0.1,
+    k: float = 4,
+    m: int = 2,
+    batch_size: int = 16,
+    init_noise_X0: float = 0.04,
+    strategy_choice_func: str = "imitate",
+    tau: float = 1.0,
+) -> np.ndarray:
+    """Compute mean final adoption across a sweep of I0 values.
+
+    For each I0, average over `batch_size` trials with jittered `X0` and seeds.
+    Returns a numpy array of means aligned with `I0_values` order.
+    """
+    I0_list = list(I0_values)
+    means: List[float] = []
+    for I0 in I0_list:
+        finals: List[float] = []
+        for _ in range(batch_size):
+
+            # For a batch_size number of simulations, the model randomizes the number of 
+            # initial infrastructure, and uses different (random) seeds
+            X0_j = float(np.clip(np.random.normal(loc=X0_frac, scale=init_noise_X0), 0.0, 0.6))
+            seed_j = np.random.randint(0, 2**31 - 1)
+            x_star = run_network_trial(
+                X0_frac = X0_j,
+                ratio = ratio,
+                I0 = I0,
+                beta_I=beta_I,
+                b=b,
+                g_I=g_I,
+                T=T,
+                network_type=network_type,
+                n_nodes=n_nodes,
+                p_ER=p_ER,
+                p_WA=p_WA,
+                k = k,
+                m=m,
+                seed=seed_j,
+                collect=False,
+                strategy_choice_func=strategy_choice_func,
+                tau=tau,
+            )
+            finals.append(x_star)
+        means.append(float(np.mean(finals)))
+    return np.asarray(means, dtype=float)
+
 # %%
