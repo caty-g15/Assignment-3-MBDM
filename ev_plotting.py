@@ -208,11 +208,13 @@ def plot_ratio_sweep(sweep_df: pd.DataFrame, *, out_path: Optional[str] = None, 
     fig.savefig(out_path, dpi=140, bbox_inches="tight")
     plt.close(fig)
     return out_path
+
 def plot_phase_plot(
     phase_df: pd.DataFrame,
     *,
     out_path: Optional[str] = None,
-    fig_title: Optional[str] = None
+    fig_title: Optional[str] = None,
+    x_label: Optional[str] = None,
 ) -> str:
     """Plot heatmap from tidy DataFrame with columns ['X0','ratio','X_final'].""" 
 
@@ -236,8 +238,13 @@ def plot_phase_plot(
     )
 
     plt.colorbar(im, label="Final adopters X*")
-    plt.xlabel("X0 (initial adoption)")
     plt.ylabel("a_I / b (initial payoff ratio)")
+
+    # Custom or default x-label
+    if x_label is None:
+        plt.xlabel("X0 (initial adoption)")
+    else:
+        plt.xlabel(x_label, fontsize=14)
 
     # Threshold curve
     X_thresh = np.clip(1.0 / ratios, 0.0, 1.0)
@@ -251,7 +258,6 @@ def plot_phase_plot(
     )
     plt.legend(loc="upper right")
 
-    # ✅ figure-level title
     if fig_title is not None:
         fig.suptitle(fig_title, fontsize=16)
 
@@ -263,59 +269,6 @@ def plot_phase_plot(
     return out_path
 
 
-# %%
-def plot_phase_plot(
-    phase_df: pd.DataFrame,
-    *,
-    out_path: Optional[str] = None,
-    fig_title: Optional[str] = None
-) -> str:
-    """Plot heatmap from tidy DataFrame with columns ['X0','ratio','X_final'].""" 
-
-    pivot = phase_df.pivot(
-        index="ratio", columns="X0", values="X_final"
-    ).sort_index().sort_index(axis=1)
-
-    ratios = pivot.index.to_numpy()
-    X0s = pivot.columns.to_numpy()
-
-    fig = plt.figure(figsize=(7, 4))
-
-    im = plt.imshow(
-        pivot.to_numpy(),
-        origin="lower",
-        extent=[X0s[0], X0s[-1], ratios[0], ratios[-1]],
-        aspect="auto",
-        vmin=0.0,
-        vmax=1.0,
-        cmap="plasma",
-    )
-
-    plt.colorbar(im, label="Final adopters X*")
-    plt.xlabel("X0 (initial adoption)")
-    plt.ylabel("a_I / b (initial payoff ratio)")
-
-    # Threshold curve
-    X_thresh = np.clip(1.0 / ratios, 0.0, 1.0)
-    plt.plot(
-        X_thresh,
-        ratios,
-        color="white",
-        linestyle="--",
-        linewidth=1.5,
-        label="X = b / a_I"
-    )
-    plt.legend(loc="upper right")
-
-    # ✅ figure-level title
-    if fig_title is not None:
-        fig.suptitle(fig_title, fontsize=16)
-
-    if out_path is None:
-        out_path = _default_plot_path("ev_phase_plot.png")
-
-    plt.savefig(out_path, dpi=140, bbox_inches="tight")
-    plt.close(fig)
-    return out_path
 
 # %%
+

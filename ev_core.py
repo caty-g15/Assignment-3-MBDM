@@ -226,7 +226,7 @@ class EVStagHuntModel(Model):
         # Build graph
         if network_type == "BA":
             G = nx.barabasi_albert_graph(n_nodes, m, seed=seed)
-        elif network_type == "WA":
+        elif network_type == "WS":
             G = nx.watts_strogatz_graph(n_nodes,k,p_WA,seed=seed)
         elif network_type == "random":
             G = nx.erdos_renyi_graph(n_nodes, p_ER, seed=seed)
@@ -296,7 +296,6 @@ class EVStagHuntModel(Model):
         if self.datacollector is not None:
             self.datacollector.collect(self) # collect data at the end of each step
         self.step_count += 1 # increment step count after data collection
-# %%
 
 #########################
 #
