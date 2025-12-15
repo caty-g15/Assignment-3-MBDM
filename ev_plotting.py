@@ -107,7 +107,7 @@ def plot_spaghetti(
             ax.plot(
                 tr_df["time"],
                 tr_df["X"],
-                color=("steelblue" if group == "baseline" else "darkorange"),
+                color=("red" if group == "baseline" else "darkorange"),
                 alpha=alpha,
                 linewidth=0.8
             )
